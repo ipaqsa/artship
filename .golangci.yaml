@@ -1,0 +1,106 @@
+version: 2 # Use config schema v2. See: https://golangci-lint.run/docs/configuration/file
+
+run: # Runner options control how analysis executes
+  timeout: 5m        # Hard stop after 5 minutes to avoid CI hangs
+  tests: true        # Include *_test.go in analysis
+  skip-dirs:         # Skip vendored deps and other generated/external code
+    - vendor
+
+# --- Code formatters ---------------------------------------------------------
+# v2 supports formatters as first-class citizens. They also act as linters
+# during `golangci-lint run` and power `golangci-lint fmt`.
+# Keep the set tight to avoid fights between tools.
+formatters:
+  enable:
+    - gofumpt   # Stricter gofmt rules (whitespace, literals). Autofix-capable
+    - goimports # Add/remove imports and group std/third-party/local. Autofix
+    - gci       # Deterministic import grouping with custom sections. Autofix
+  settings:
+    gofumpt:
+      extra-rules: true # Enforce additional simplifications beyond gofmt
+    goimports:
+      # Treat these module paths as local for grouping. If you split modules
+      # later, add more prefixes here.
+      local-prefixes:
+        - kube2e
+    gci:
+      # Use a custom order so that local packages stay stable across tools.
+      custom-order: true
+      sections:
+        - standard      # Go stdlib
+        - default       # Everything not matched by other sections
+        - prefix(kube2e) # Repos under this prefix
+        - localmodule   # Current module from go.mod
+      # Reduce noise in import blocks
+      no-inline-comments: true
+      no-prefix-comments: true
+
+# --- Linters -----------------------------------------------------------------
+linters:
+  # Start from the default set and add focused linters with good signal-to-noise.
+  enable:
+    - errcheck        # Unchecked errors
+    - govet           # Official vet checks; we also enable shadow below
+    - staticcheck     # Advanced SA/SI/ST checks
+    - ineffassign     # Useless assignments
+    - unused          # Dead code
+    - misspell        # Spelling in comments and strings
+    - gosec           # Basic security checks
+    - goconst         # Repeated strings/ints that should be consts
+    - gocyclo         # Complexity guard
+    - dupl            # Duplicate code blocks
+    - unparam         # Unused function parameters
+    - unconvert       # Redundant type conversions
+    - prealloc        # Suggest slice preallocation
+    - copyloopvar     # Loop var capture in goroutines
+    - dogsled         # Multiple assignments with blank identifiers
+    - asciicheck      # Non-ASCII in identifiers
+    - errname         # Error var/type naming conventions
+    - gocritic        # Heuristic code smells
+    - godot           # Dots at end of doc comments
+    - godox           # TODO/FIXME left in code
+    - nolintlint      # Validate //nolint usage
+    - revive          # Style and best-practice rules
+    - rowserrcheck    # Check sql.Rows err handling
+    - bidichk         # Bidi control chars in source
+    - bodyclose       # Ensure HTTP response bodies closed
+    - contextcheck    # ctx is first arg and propagated
+    - errorlint       # Proper errors.Is/As and %w usage
+    - err113          # Prefer wrapped static sentinel errors
+    - wrapcheck       # All returned errors are wrapped (may conflict with errorlint)
+    - paralleltest    # t.Parallel usage in tests
+    - thelper         # Helper functions must call t.Helper
+  disable:
+    - lll             # We allow long lines
+
+  settings:
+    gocyclo:
+      min-complexity: 15 # Flag only truly complex functions
+    misspell:
+      locale: US          # US English dictionary
+    errcheck:
+      check-type-assertions: true # Detect ignored type assertion results
+      check-blank: true           # Disallow assigning errors to _
+    govet:
+      enable:
+        - shadow        # Replace deprecated check-shadowing flag (v2)
+    staticcheck:
+      checks:
+        - all           # Keep full SA/ST/SI set; tune via issues.exclusions if noisy
+    copyloopvar:
+      check-alias: true # Catch aliasing loop variables too
+    dogsled:
+      max-blank-identifiers: 3 # Allow short multi-assign patterns
+    dupl:
+      threshold: 150     # Raise threshold to reduce false positives on tests
+    nolintlint:
+      require-explanation: true # Force reason after //nolint
+      allow-unused: false       # Disallow dead nolint directives
+
+# Note: errorlint and wrapcheck can disagree about wrapping patterns. If noise
+# is high, drop one or add targeted exclusions under issues.exclusions.
+
+# Optional: uncomment to enforce new-issues-only for legacy repos
+# issues:
+#   new: true
+#   whole-files: true
