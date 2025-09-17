@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"artship/internal/tools"
+	"github.com/ipaqsa/artship/internal/tools"
 )
 
 // Artifact contains information about an artifact

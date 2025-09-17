@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"io"
 
-	"artship/internal/tools"
+	"github.com/ipaqsa/artship/internal/tools"
 )
 
 func (c *Client) Cat(ctx context.Context, imageRef, artifact string) ([]byte, error) {

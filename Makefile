@@ -1,4 +1,4 @@
-.PHONY: test lint build build-image build-image-multiplatform push push-latest builder clean install help
+.PHONY: test lint build build-image build-image-multiplatform push push-latest builder clean install test-build help
 
 BINARY ?= artship
 REGISTRY ?= ghcr.io/ipaqsa
@@ -29,7 +29,7 @@ vet:
 
 ## Build the CLI binary
 build:
-	CGO_ENABLED=0 go build -trimpath -ldflags="$(LDFLAGS)" ./cmd/artship
+	CGO_ENABLED=0 go build -trimpath -ldflags="$(LDFLAGS)" -o $(BINARY) ./cmd/artship
 
 ## Build for multiple platforms
 build-all:
@@ -78,6 +78,11 @@ builder:
 		echo "Using existing multiplatform builder..."; \
 		docker buildx use multiplatform-builder; \
 	fi
+
+## Test that the binary builds and works correctly
+test-build: build
+	./$(BINARY) version
+	@echo "✅ Binary builds and runs successfully"
 
 ## Clean build artifacts
 clean:

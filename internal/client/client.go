@@ -12,7 +12,7 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/mutate"
 	"github.com/google/go-containerregistry/pkg/v1/remote"
 
-	"artship/internal/logs"
+	"github.com/ipaqsa/artship/internal/logs"
 )
 
 const (

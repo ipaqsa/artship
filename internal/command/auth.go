@@ -3,11 +3,11 @@ package command
 import (
 	"fmt"
 
-	"artship/internal/client"
+	"github.com/ipaqsa/artship/internal/client"
 
 	"github.com/spf13/cobra"
 
-	"artship/internal/logs"
+	"github.com/ipaqsa/artship/internal/logs"
 )
 
 func init() {

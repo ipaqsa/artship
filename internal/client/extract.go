@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"artship/internal/tools"
+	"github.com/ipaqsa/artship/internal/tools"
 )
 
 func (c *Client) Extract(ctx context.Context, imageRef, output string) error {
