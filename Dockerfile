@@ -17,7 +17,7 @@ COPY . .
 RUN CGO_ENABLED=0 GOOS=${TARGETOS} GOARCH=${TARGETARCH} go build \
     -trimpath \
     -ldflags="-X artship/internal/version.Version=${VERSION} -s -w" \
-    -o app ./cmd
+    -o app ./cmd/artship
 
 # Runtime stage (scratch)
 FROM scratch

@@ -7,7 +7,7 @@ import (
 	"fmt"
 	"io"
 
-	"artship/internal/tools"
+	"github.com/ipaqsa/artship/internal/tools"
 )
 
 var ErrNotFound = errors.New("artifact not found")

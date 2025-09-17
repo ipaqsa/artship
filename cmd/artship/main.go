@@ -3,7 +3,7 @@ package main
 import (
 	"log"
 
-	"artship/internal/command"
+	"github.com/ipaqsa/artship/internal/command"
 )
 
 func main() {

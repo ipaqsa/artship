@@ -59,7 +59,7 @@ sudo make install
 ### Using Go
 
 ```bash
-go install github.com/ipaqsa/artship@latest
+go install github.com/ipaqsa/artship/cmd/artship@latest
 ```
 
 ### Using Docker
