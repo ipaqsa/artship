@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"os"
 
-	"artship/internal/tools"
+	"github.com/ipaqsa/artship/internal/tools"
 )
 
 // Extract extracts all files from an OCI image

@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"artship/internal/tools"
+	"github.com/ipaqsa/artship/internal/tools"
 
 	"gopkg.in/yaml.v3"
 )

@@ -1,4 +1,4 @@
-module artship
+module github.com/ipaqsa/artship
 
 go 1.25
 

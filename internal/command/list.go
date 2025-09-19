@@ -5,8 +5,8 @@ import (
 
 	"github.com/spf13/cobra"
 
-	"artship/internal/client"
-	"artship/internal/logs"
+	"github.com/ipaqsa/artship/internal/client"
+	"github.com/ipaqsa/artship/internal/logs"
 )
 
 var (

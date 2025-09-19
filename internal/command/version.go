@@ -3,8 +3,8 @@ package command
 import (
 	"github.com/spf13/cobra"
 
-	"artship/internal/logs"
-	"artship/internal/version"
+	"github.com/ipaqsa/artship/internal/logs"
+	"github.com/ipaqsa/artship/internal/version"
 )
 
 func init() {
