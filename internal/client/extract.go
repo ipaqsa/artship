@@ -8,9 +8,14 @@ import (
 	"artship/internal/tools"
 )
 
+// Extract extracts all files from an OCI image
 func (c *Client) Extract(ctx context.Context, imageRef, output string) error {
 	if imageRef == "" {
 		return fmt.Errorf("no image ref provided")
+	}
+
+	if len(output) == 0 {
+		return fmt.Errorf("no output provided")
 	}
 
 	img, err := c.extractImage(ctx, imageRef)

@@ -16,7 +16,6 @@ type Auth struct {
 
 // RegistryAuth represents authentication for a specific registry
 type RegistryAuth struct {
-	Registry      string `json:"registry" yaml:"Registry"`
 	Username      string `json:"username,omitempty" yaml:"Username,omitempty"`
 	Authenticated bool   `json:"authenticated" yaml:"Authenticated"`
 }
@@ -72,7 +71,6 @@ func (c *Client) GetAuth() (*Auth, error) {
 	// Process auths
 	for registry, authData := range config.Auths {
 		regAuth := RegistryAuth{
-			Registry:      registry,
 			Authenticated: true,
 		}
 
@@ -91,7 +89,6 @@ func (c *Client) GetAuth() (*Auth, error) {
 	for registry, helper := range config.CredHelpers {
 		if _, exists := authInfo.Registries[registry]; !exists {
 			authInfo.Registries[registry] = RegistryAuth{
-				Registry: registry,
 				Username: fmt.Sprintf("(managed by %s)", helper),
 			}
 		}
