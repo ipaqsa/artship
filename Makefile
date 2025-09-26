@@ -4,7 +4,7 @@ BINARY ?= artship
 REGISTRY ?= ghcr.io/ipaqsa
 IMAGE ?= artship:latest
 VERSION ?= $(shell git describe --tags --always --dirty 2>/dev/null || echo "unknown")
-PLATFORMS ?= linux/amd64,linux/arm64, darwin/amd64
+PLATFORMS ?= linux/amd64,linux/arm64,darwin/amd64
 LDFLAGS := -X artship/internal/version.Version=$(VERSION) -s -w
 
 ## Run tests
