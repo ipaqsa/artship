@@ -37,22 +37,22 @@ func (l ArtifactList) String(detailed bool) string {
 }
 
 // List lists all available artifacts in image
-func (c *Client) List(ctx context.Context, imageRef, filter string) (ArtifactList, error) {
+func (c *Client) List(ctx context.Context, imageRef, filter, layerDigest string) (ArtifactList, error) {
 	if imageRef == "" {
 		return nil, fmt.Errorf("no image ref provided")
 	}
 
 	c.logger.Debug("Walking the image...")
 
-	img, err := c.extractImage(ctx, imageRef)
+	reader, err := c.extract(ctx, imageRef, layerDigest)
 	if err != nil {
 		return nil, err
 	}
-	defer img.Close()
+	defer reader.Close()
 
 	var artifacts []Artifact
 	c.logger.Debug("Scanning image artifacts...")
-	err = tools.WalkTar(img, func(_ io.Reader, header *tar.Header) error {
+	err = tools.WalkTar(reader, func(_ io.Reader, header *tar.Header) error {
 		artType := tools.GetArtifactType(header.Typeflag)
 
 		// Apply type filter

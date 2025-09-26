@@ -3,6 +3,7 @@ package client
 import (
 	"context"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/ipaqsa/artship/internal/tools"
@@ -37,5 +38,38 @@ func (c *Client) Extract(ctx context.Context, imageRef, output string) error {
 
 	c.logger.Info(res.String())
 
+	return nil
+}
+
+// ExtractTar extracts raw tar
+func (c *Client) ExtractTar(ctx context.Context, imageRef string, output string) error {
+	if imageRef == "" {
+		return fmt.Errorf("no image ref provided")
+	}
+
+	if output == "" {
+		return fmt.Errorf("no output provided")
+	}
+
+	img, err := c.extractImage(ctx, imageRef)
+	if err != nil {
+		return err
+	}
+	defer img.Close()
+
+	// Create or open the output file
+	out, err := os.Create(output)
+	if err != nil {
+		return fmt.Errorf("create output file: %w", err)
+	}
+	defer out.Close()
+
+	// Copy the tar stream directly to the file
+	copied, err := io.Copy(out, img)
+	if err != nil {
+		return fmt.Errorf("copy tar stream: %w", err)
+	}
+
+	c.logger.Info("Successfully extracted tar archive: %s (%s)", output, tools.FormatSize(copied))
 	return nil
 }

@@ -12,6 +12,7 @@ import (
 var (
 	filter   string
 	detailed bool
+	layer    string
 )
 
 func init() {
@@ -21,6 +22,7 @@ func init() {
 	listCmd.Flags().StringVarP(&auth, "auth", "", "", "Auth for registry authentication")
 	listCmd.Flags().StringVarP(&filter, "filter", "f", "", "Filter by type: file, dir, symlink, hardlink, all")
 	listCmd.Flags().BoolVarP(&detailed, "detailed", "d", false, "Show detailed info (size, type, permissions)")
+	listCmd.Flags().StringVarP(&layer, "layer", "l", "", "Show files from specific layer (layer digest)")
 	listCmd.Flags().BoolVarP(&insecure, "insecure", "k", false, "Allow insecure registry connections")
 	listCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Verbose debug output")
 
@@ -34,13 +36,16 @@ var listCmd = &cobra.Command{
 This command downloads the image layers and lists all available artifacts`,
 	Example: `  # List all artifacts in an image
   artship ls nginx:latest
-  
+
   # List artifacts with detailed info
   artship ls nginx:latest --detailed
-  
+
   # List only files
   artship ls nginx:latest --filter file
-  
+
+  # List files from specific layer
+  artship ls nginx:latest --layer sha256:abc123...
+
   # List directories with info
   artship ls nginx:latest -f dir -d`,
 	Args: cobra.ExactArgs(1),
@@ -56,7 +61,7 @@ This command downloads the image layers and lists all available artifacts`,
 			Logger:   logger,
 		})
 
-		artifacts, err := cli.List(cmd.Context(), args[0], filter)
+		artifacts, err := cli.List(cmd.Context(), args[0], filter, layer)
 		if err != nil {
 			return fmt.Errorf("failed to list artifacts: %w", err)
 		}

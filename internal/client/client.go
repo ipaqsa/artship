@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"time"
@@ -67,6 +68,14 @@ func setupRemoteOptions(username, password, auth, token string) []remote.Option 
 	return remoteOpts
 }
 
+func (c *Client) extract(ctx context.Context, imageRef, layer string) (io.ReadCloser, error) {
+	if len(layer) == 0 {
+		return c.extractImage(ctx, imageRef)
+	}
+
+	return c.extractLayer(ctx, imageRef, layer)
+}
+
 func (c *Client) extractImage(ctx context.Context, imageRef string) (io.ReadCloser, error) {
 	img, err := c.image(ctx, imageRef)
 	if err != nil {
@@ -74,6 +83,39 @@ func (c *Client) extractImage(ctx context.Context, imageRef string) (io.ReadClos
 	}
 
 	return mutate.Extract(img), nil
+}
+
+func (c *Client) extractLayer(ctx context.Context, imageRef, layerDigest string) (io.ReadCloser, error) {
+	img, err := c.image(ctx, imageRef)
+	if err != nil {
+		return nil, err
+	}
+
+	digest, err := crv1.NewHash(layerDigest)
+	if err != nil {
+		return nil, fmt.Errorf("parse layer digest: %w", err)
+	}
+
+	// Get layers
+	layers, err := img.Layers()
+	if err != nil {
+		return nil, fmt.Errorf("get image layers: %w", err)
+	}
+
+	// Find the layer with matching digest
+	for _, layer := range layers {
+		layerHash, err := layer.Digest()
+		if err != nil {
+			continue
+		}
+
+		if layerHash == digest {
+			c.logger.Debug("Found matching layer: %s", layerDigest)
+			return layer.Uncompressed()
+		}
+	}
+
+	return nil, errors.New("layer not found")
 }
 
 func (c *Client) image(_ context.Context, imageRef string) (crv1.Image, error) {
