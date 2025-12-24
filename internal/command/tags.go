@@ -7,6 +7,7 @@ import (
 
 	"github.com/ipaqsa/artship/internal/client"
 	"github.com/ipaqsa/artship/internal/logs"
+	"github.com/ipaqsa/artship/internal/tools"
 )
 
 func init() {
@@ -51,9 +52,11 @@ This command queries the registry and displays all tags in alphabetical order.`,
 			return fmt.Errorf("failed to list tags: %w", err)
 		}
 
-		logger.Info("Available tags:")
+		logger.Info("")
+		logger.Info(tools.BoldBlue("Available tags for %s:"), tools.Blue(args[0]))
+		logger.Info(tools.Gray("─────────────────────────────────────────────────────────────"))
 		for _, tag := range tags {
-			logger.Info(" " + tag)
+			logger.Info("  %s %s", tools.Green("•"), tools.Yellow(tag))
 		}
 
 		return nil

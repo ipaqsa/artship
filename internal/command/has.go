@@ -8,6 +8,7 @@ import (
 
 	"github.com/ipaqsa/artship/internal/client"
 	"github.com/ipaqsa/artship/internal/logs"
+	"github.com/ipaqsa/artship/internal/tools"
 )
 
 func init() {
@@ -53,11 +54,11 @@ the presence of files or directories before performing operations.`,
 				return fmt.Errorf("failed to check artifact: %w", err)
 			}
 
-			logger.Info("Artifact not found")
+			logger.Info(tools.Red("✗")+" Artifact %s not found in %s", tools.Yellow(args[1]), tools.Blue(args[0]))
 			return nil
 		}
 
-		logger.Info("Artifact found")
+		logger.Info(tools.Green("✓")+" Artifact %s found in %s", tools.Yellow(args[1]), tools.Blue(args[0]))
 
 		return nil
 	},

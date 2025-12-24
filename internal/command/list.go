@@ -7,6 +7,7 @@ import (
 
 	"github.com/ipaqsa/artship/internal/client"
 	"github.com/ipaqsa/artship/internal/logs"
+	"github.com/ipaqsa/artship/internal/tools"
 )
 
 var (
@@ -66,8 +67,9 @@ This command downloads the image layers and lists all available artifacts`,
 			return fmt.Errorf("failed to list artifacts: %w", err)
 		}
 
-		logger.Info("Image artifacts:")
-
+		logger.Info("")
+		logger.Info(tools.BoldBlue("Image artifacts:"))
+		logger.Info(tools.Gray("─────────────────────────────────────────────────────────────"))
 		logger.Info(artifacts.String(detailed))
 
 		return nil

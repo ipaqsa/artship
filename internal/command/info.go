@@ -7,6 +7,7 @@ import (
 
 	"github.com/ipaqsa/artship/internal/client"
 	"github.com/ipaqsa/artship/internal/logs"
+	"github.com/ipaqsa/artship/internal/tools"
 )
 
 func init() {
@@ -53,7 +54,19 @@ artifact properties before extracting them.`,
 			return fmt.Errorf("failed to get artifact info: %w", err)
 		}
 
-		logger.Info("\nArtifact Info: \n%s", info.String(true))
+		// Print artifact info with colors
+		logger.Info("")
+		logger.Info(tools.BoldBlue("Artifact Information"))
+		logger.Info(tools.Gray("─────────────────────────────────────────────────────────────"))
+		logger.Info("Path: %s", tools.Blue(info.Path))
+		logger.Info("Type: %s", tools.Yellow(info.Type))
+
+		sizeStr := tools.FormatSize(info.Size)
+		if info.Type == "dir" || info.Type == "symlink" || info.Type == "hardlink" {
+			sizeStr = "-"
+		}
+		logger.Info("Size: %s", tools.Green(sizeStr))
+		logger.Info("Mode: %s", tools.Gray(info.Mode))
 
 		return nil
 	},

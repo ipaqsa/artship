@@ -10,7 +10,8 @@ import (
 )
 
 func init() {
-	extractCmd.Flags().StringVarP(&output, "output", "o", "", "Target directory to extract all files (default: ./<image-name>)")
+	extractCmd.Flags().StringVarP(&output, "output", "o", "", "Target directory to extract all files (or tar file path with --tar)")
+	extractCmd.Flags().BoolVar(&extractTar, "tar", false, "Extract as a tar archive file instead of extracting files")
 	extractCmd.Flags().StringVarP(&username, "username", "u", "", "Username for registry authentication")
 	extractCmd.Flags().StringVarP(&password, "password", "p", "", "Password for registry authentication")
 	extractCmd.Flags().StringVarP(&token, "token", "t", "", "Token for registry authentication")
@@ -30,13 +31,19 @@ var extractCmd = &cobra.Command{
 all files, directories, and links to the target directory on the local filesystem.
 
 This command copies the entire filesystem from the image to your local machine,
-preserving the directory structure, file permissions, and symbolic links.`,
+preserving the directory structure, file permissions, and symbolic links.
+
+With the --tar flag, the image will be saved as a tar archive instead of
+extracting individual files.`,
 	Example: `  # Extract all files from nginx image to current directory
-  artship extract nginx:latest
-  
+  artship extract nginx:latest -o ./extracted
+
   # Extract all files to a specific directory
   artship extract alpine:latest -o ./extracted-alpine
-  
+
+  # Extract as a tar archive
+  artship extract nginx:latest --tar -o ./nginx.tar
+
   # Extract from a private registry
   artship extract my-registry.com/myapp:v1.0 -o ./extracted-app`,
 	Args: cobra.ExactArgs(1),
@@ -51,8 +58,14 @@ preserving the directory structure, file permissions, and symbolic links.`,
 			Logger:   logger,
 		})
 
-		if err := cli.Extract(cmd.Context(), args[0], output); err != nil {
-			return fmt.Errorf("failed to extract image: %w", err)
+		if extractTar {
+			if err := cli.ExtractTar(cmd.Context(), args[0], output); err != nil {
+				return fmt.Errorf("failed to extract tar: %w", err)
+			}
+		} else {
+			if err := cli.Extract(cmd.Context(), args[0], output); err != nil {
+				return fmt.Errorf("failed to extract image: %w", err)
+			}
 		}
 
 		return nil

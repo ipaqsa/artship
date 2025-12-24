@@ -38,7 +38,7 @@ func (c *Client) Copy(ctx context.Context, imageRef string, artifacts []string, 
 				if err = tools.CopyArtifact(r, header, output); err != nil {
 					return fmt.Errorf("copy the artifact '%s': %w", artifact, err)
 				}
-				c.logger.Info("Copied artifact: %s", header.Name)
+				c.logger.Info(tools.Green("✓")+" Copied: %s", tools.Blue(header.Name))
 			}
 		}
 
@@ -54,9 +54,9 @@ func (c *Client) Copy(ctx context.Context, imageRef string, artifacts []string, 
 	}
 
 	if found < len(artifacts) {
-		c.logger.Info("Warning: Only found %d of %d requested artifacts", found, len(artifacts))
+		c.logger.Info(tools.Yellow("⚠")+" Warning: Only found %d of %d requested artifacts", found, len(artifacts))
 	} else {
-		c.logger.Info("Successfully copied %d artifacts", found)
+		c.logger.Info(tools.BoldGreen(fmt.Sprintf("✓ Successfully copied %d artifacts", found)))
 	}
 
 	return nil

@@ -70,6 +70,6 @@ func (c *Client) ExtractTar(ctx context.Context, imageRef string, output string)
 		return fmt.Errorf("copy tar stream: %w", err)
 	}
 
-	c.logger.Info("Successfully extracted tar archive: %s (%s)", output, tools.FormatSize(copied))
+	c.logger.Info(tools.BoldGreen("✓")+" Successfully extracted tar archive: %s %s", tools.Blue(output), tools.Gray("("+tools.FormatSize(copied)+")"))
 	return nil
 }
