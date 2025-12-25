@@ -136,3 +136,70 @@ func (c *Client) image(_ context.Context, imageRef string) (crv1.Image, error) {
 
 	return img, nil
 }
+
+// fetchImageWithOptions fetches an image with custom authentication options
+func (c *Client) fetchImageWithOptions(ctx context.Context, imageRef string, opts *MirrorOptions, isSource bool) (crv1.Image, error) {
+	// Build name options (for insecure registry support)
+	var nameOpts []name.Option
+	if opts != nil && isSource && opts.SourceInsecure {
+		nameOpts = append(nameOpts, name.Insecure)
+	} else {
+		nameOpts = c.nameOptions
+	}
+
+	ref, err := name.ParseReference(imageRef, nameOpts...)
+	if err != nil {
+		return nil, fmt.Errorf("parse image reference '%s': %w", imageRef, err)
+	}
+
+	// Determine which credentials to use
+	var remoteOpts []remote.Option
+	if opts != nil && isSource && (opts.SourceUsername != "" || opts.SourceToken != "" || opts.SourceAuth != "") {
+		// Use source-specific credentials
+		remoteOpts = setupRemoteOptions(opts.SourceUsername, opts.SourcePassword, opts.SourceAuth, opts.SourceToken)
+	} else {
+		// Use default client credentials
+		remoteOpts = c.remoteOptions
+	}
+
+	c.logger.Debug("Fetching image from registry...")
+	img, err := remote.Image(ref, remoteOpts...)
+	if err != nil {
+		return nil, fmt.Errorf("fetch image '%s': %w", imageRef, err)
+	}
+
+	return img, nil
+}
+
+// writeImageWithOptions writes an image to a registry with custom authentication options
+func (c *Client) writeImageWithOptions(ctx context.Context, imageRef string, img crv1.Image, opts *MirrorOptions) error {
+	// Build name options (for insecure registry support)
+	var nameOpts []name.Option
+	if opts != nil && opts.DestInsecure {
+		nameOpts = append(nameOpts, name.Insecure)
+	} else {
+		nameOpts = c.nameOptions
+	}
+
+	ref, err := name.ParseReference(imageRef, nameOpts...)
+	if err != nil {
+		return fmt.Errorf("parse image reference '%s': %w", imageRef, err)
+	}
+
+	// Determine which credentials to use for destination
+	var remoteOpts []remote.Option
+	if opts != nil && (opts.DestUsername != "" || opts.DestToken != "" || opts.DestAuth != "") {
+		// Use destination-specific credentials
+		remoteOpts = setupRemoteOptions(opts.DestUsername, opts.DestPassword, opts.DestAuth, opts.DestToken)
+	} else {
+		// Use default client credentials
+		remoteOpts = c.remoteOptions
+	}
+
+	c.logger.Debug("Uploading image to registry...")
+	if err := remote.Write(ref, img, remoteOpts...); err != nil {
+		return fmt.Errorf("write image '%s': %w", imageRef, err)
+	}
+
+	return nil
+}

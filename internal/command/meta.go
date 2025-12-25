@@ -7,7 +7,6 @@ import (
 
 	"github.com/ipaqsa/artship/internal/client"
 	"github.com/ipaqsa/artship/internal/logs"
-	"github.com/ipaqsa/artship/internal/tools"
 )
 
 func init() {
@@ -49,8 +48,8 @@ before extracting artifacts.`,
 		}
 
 		logger.Info("")
-		logger.Info(tools.BoldBlue("Image Metadata:"))
-		logger.Info(tools.Gray("─────────────────────────────────────────────────────────────"))
+		logger.Info(logs.BoldBlue("Image Metadata:"))
+		logger.Info(logs.Gray("─────────────────────────────────────────────────────────────"))
 		logger.Info("%s", meta.String())
 
 		return nil

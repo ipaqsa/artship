@@ -1,71 +1,70 @@
-package tools
+package logs
 
 import "fmt"
 
 const (
-	ColorReset  = "\033[0m"
-	ColorRed    = "\033[31m"
-	ColorGreen  = "\033[32m"
-	ColorYellow = "\033[33m"
-	ColorBlue   = "\033[34m"
-
-	ColorGray = "\033[37m"
+	colorReset  = "\033[0m"
+	colorRed    = "\033[31m"
+	colorGreen  = "\033[32m"
+	colorYellow = "\033[33m"
+	colorBlue   = "\033[34m"
+	colorGray   = "\033[37m"
 
 	// Bold colors
-	ColorBoldRed    = "\033[1;31m"
-	ColorBoldGreen  = "\033[1;32m"
-	ColorBoldYellow = "\033[1;33m"
-	ColorBoldBlue   = "\033[1;34m"
+	colorBoldRed    = "\033[1;31m"
+	colorBoldGreen  = "\033[1;32m"
+	colorBoldYellow = "\033[1;33m"
+	colorBoldBlue   = "\033[1;34m"
 )
 
-// Colorize wraps text with ANSI color codes
-func Colorize(color, text string) string {
-	return color + text + ColorReset
+// colorize wraps text with ANSI color codes
+func colorize(color, text string) string {
+	return color + text + colorReset
 }
 
 // Red returns text in red color
 func Red(text string) string {
-	return Colorize(ColorRed, text)
+	return colorize(colorRed, text)
 }
 
 // Green returns text in green color
 func Green(text string) string {
-	return Colorize(ColorGreen, text)
+	return colorize(colorGreen, text)
 }
 
 // Yellow returns text in yellow color
 func Yellow(text string) string {
-	return Colorize(ColorYellow, text)
+	return colorize(colorYellow, text)
 }
 
 // Blue returns text in blue color
 func Blue(text string) string {
-	return Colorize(ColorBlue, text)
+	return colorize(colorBlue, text)
 }
 
 // Gray returns text in gray color
 func Gray(text string) string {
-	return Colorize(ColorGray, text)
+	return colorize(colorGray, text)
 }
 
 // BoldRed returns text in bold red color
 func BoldRed(text string) string {
-	return Colorize(ColorBoldRed, text)
+	return colorize(colorBoldRed, text)
 }
 
 // BoldGreen returns text in bold green color
 func BoldGreen(text string) string {
-	return Colorize(ColorBoldGreen, text)
+	return colorize(colorBoldGreen, text)
 }
 
 // BoldYellow returns text in bold yellow color
 func BoldYellow(text string) string {
-	return Colorize(ColorBoldYellow, text)
+	return colorize(colorBoldYellow, text)
 }
 
 // BoldBlue returns text in bold blue color
 func BoldBlue(text string) string {
-	return Colorize(ColorBoldBlue, text)
+	return colorize(colorBoldBlue, text)
 }
 
 // DiffSymbol returns colored symbol for diff status

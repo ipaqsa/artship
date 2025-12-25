@@ -7,6 +7,7 @@ import (
 	"sort"
 	"strings"
 
+	"github.com/ipaqsa/artship/internal/logs"
 	"github.com/ipaqsa/artship/internal/tools"
 )
 
@@ -56,25 +57,25 @@ func (r *DiffResult) String(showUnchanged bool) string {
 	var sb strings.Builder
 
 	sb.WriteString("\n")
-	sb.WriteString(tools.BoldBlue(fmt.Sprintf("Comparing %s → %s", r.SourceImage, r.TargetImage)))
+	sb.WriteString(logs.BoldBlue(fmt.Sprintf("Comparing %s → %s", r.SourceImage, r.TargetImage)))
 	sb.WriteString("\n")
-	sb.WriteString(tools.Gray("─────────────────────────────────────────────────────────────"))
+	sb.WriteString(logs.Gray("─────────────────────────────────────────────────────────────"))
 	sb.WriteString("\n\n")
 
 	// Summary
-	sb.WriteString(tools.BoldGreen(fmt.Sprintf("+ Added:    %d files\n", r.TotalAdded)))
-	sb.WriteString(tools.BoldRed(fmt.Sprintf("- Removed:  %d files\n", r.TotalRemoved)))
-	sb.WriteString(tools.BoldYellow(fmt.Sprintf("~ Modified: %d files\n", r.TotalChanged)))
+	sb.WriteString(logs.BoldGreen(fmt.Sprintf("+ Added:    %d files\n", r.TotalAdded)))
+	sb.WriteString(logs.BoldRed(fmt.Sprintf("- Removed:  %d files\n", r.TotalRemoved)))
+	sb.WriteString(logs.BoldYellow(fmt.Sprintf("~ Modified: %d files\n", r.TotalChanged)))
 	sb.WriteString("\n")
-	sb.WriteString(tools.Gray("─────────────────────────────────────────────────────────────"))
+	sb.WriteString(logs.Gray("─────────────────────────────────────────────────────────────"))
 	sb.WriteString("\n\n")
 
 	// Added files
 	if len(r.Added) > 0 {
-		sb.WriteString(tools.BoldGreen("Added files:\n"))
+		sb.WriteString(logs.BoldGreen("Added files:\n"))
 		for _, entry := range r.Added {
 			details := fmt.Sprintf("(%s, %s)", entry.Type, tools.FormatSize(entry.NewSize))
-			sb.WriteString(tools.FormatDiffLine(FileStatusAdded, entry.Path, details))
+			sb.WriteString(logs.FormatDiffLine(FileStatusAdded, entry.Path, details))
 			sb.WriteString("\n")
 		}
 		sb.WriteString("\n")
@@ -82,10 +83,10 @@ func (r *DiffResult) String(showUnchanged bool) string {
 
 	// Removed files
 	if len(r.Removed) > 0 {
-		sb.WriteString(tools.BoldRed("Removed files:\n"))
+		sb.WriteString(logs.BoldRed("Removed files:\n"))
 		for _, entry := range r.Removed {
 			details := fmt.Sprintf("(%s, %s)", entry.Type, tools.FormatSize(entry.OldSize))
-			sb.WriteString(tools.FormatDiffLine(FileStatusRemoved, entry.Path, details))
+			sb.WriteString(logs.FormatDiffLine(FileStatusRemoved, entry.Path, details))
 			sb.WriteString("\n")
 		}
 		sb.WriteString("\n")
@@ -93,7 +94,7 @@ func (r *DiffResult) String(showUnchanged bool) string {
 
 	// Modified files
 	if len(r.Modified) > 0 {
-		sb.WriteString(tools.BoldYellow("Modified files:\n"))
+		sb.WriteString(logs.BoldYellow("Modified files:\n"))
 		for _, entry := range r.Modified {
 			var details string
 			if entry.OldSize != entry.NewSize {
@@ -106,7 +107,7 @@ func (r *DiffResult) String(showUnchanged bool) string {
 					details = fmt.Sprintf("(mode: %s → %s)", entry.OldMode, entry.NewMode)
 				}
 			}
-			sb.WriteString(tools.FormatDiffLine(FileStatusModified, entry.Path, details))
+			sb.WriteString(logs.FormatDiffLine(FileStatusModified, entry.Path, details))
 			sb.WriteString("\n")
 		}
 		sb.WriteString("\n")
@@ -114,10 +115,10 @@ func (r *DiffResult) String(showUnchanged bool) string {
 
 	// Unchanged files (optional)
 	if showUnchanged && len(r.Unchanged) > 0 {
-		sb.WriteString(tools.Gray(fmt.Sprintf("Unchanged files: %d\n", len(r.Unchanged))))
+		sb.WriteString(logs.Gray(fmt.Sprintf("Unchanged files: %d\n", len(r.Unchanged))))
 		for _, entry := range r.Unchanged {
 			details := fmt.Sprintf("(%s)", tools.FormatSize(entry.NewSize))
-			sb.WriteString(tools.FormatDiffLine(FileStatusUnchanged, entry.Path, details))
+			sb.WriteString(logs.FormatDiffLine(FileStatusUnchanged, entry.Path, details))
 			sb.WriteString("\n")
 		}
 	}
@@ -141,18 +142,18 @@ func (c *Client) Diff(ctx context.Context, image1Ref, image2Ref string, includeU
 	}
 
 	c.logger.Info("Analyzing %s...", image1Ref)
-	files1, err := c.getFileMap(ctx, image1Ref)
+	sourceFiles, err := c.getFileMap(ctx, image1Ref)
 	if err != nil {
 		return nil, fmt.Errorf("get files from %s: %w", image1Ref, err)
 	}
 
 	c.logger.Info("Analyzing %s...", image2Ref)
-	files2, err := c.getFileMap(ctx, image2Ref)
+	targetFiles, err := c.getFileMap(ctx, image2Ref)
 	if err != nil {
 		return nil, fmt.Errorf("get files from %s: %w", image2Ref, err)
 	}
 
-	c.logger.Debug("Comparing %d files from source with %d files from target", len(files1), len(files2))
+	c.logger.Debug("Comparing %d files from source with %d files from target", len(sourceFiles), len(targetFiles))
 
 	result := &DiffResult{
 		SourceImage: image1Ref,
@@ -167,19 +168,19 @@ func (c *Client) Diff(ctx context.Context, image1Ref, image2Ref string, includeU
 	}
 
 	// Find removed and modified files
-	for path, info1 := range files1 {
-		if info2, exists := files2[path]; exists {
+	for path, sourceInfo := range sourceFiles {
+		if targetInfo, exists := targetFiles[path]; exists {
 			// File exists in both images
-			if info1.Size != info2.Size || info1.Mode != info2.Mode {
+			if sourceInfo.Size != targetInfo.Size || sourceInfo.Mode != targetInfo.Mode {
 				// File was modified
 				result.Modified = append(result.Modified, DiffEntry{
 					Path:    path,
 					Status:  FileStatusModified,
-					OldSize: info1.Size,
-					NewSize: info2.Size,
-					OldMode: info1.Mode,
-					NewMode: info2.Mode,
-					Type:    info2.Type,
+					OldSize: sourceInfo.Size,
+					NewSize: targetInfo.Size,
+					OldMode: sourceInfo.Mode,
+					NewMode: targetInfo.Mode,
+					Type:    targetInfo.Type,
 				})
 				result.TotalChanged++
 			} else if includeUnchanged {
@@ -187,9 +188,9 @@ func (c *Client) Diff(ctx context.Context, image1Ref, image2Ref string, includeU
 				result.Unchanged = append(result.Unchanged, DiffEntry{
 					Path:    path,
 					Status:  FileStatusUnchanged,
-					NewSize: info2.Size,
-					NewMode: info2.Mode,
-					Type:    info2.Type,
+					NewSize: targetInfo.Size,
+					NewMode: targetInfo.Mode,
+					Type:    targetInfo.Type,
 				})
 			}
 		} else {
@@ -197,24 +198,24 @@ func (c *Client) Diff(ctx context.Context, image1Ref, image2Ref string, includeU
 			result.Removed = append(result.Removed, DiffEntry{
 				Path:    path,
 				Status:  FileStatusRemoved,
-				OldSize: info1.Size,
-				OldMode: info1.Mode,
-				Type:    info1.Type,
+				OldSize: sourceInfo.Size,
+				OldMode: sourceInfo.Mode,
+				Type:    sourceInfo.Type,
 			})
 			result.TotalRemoved++
 		}
 	}
 
 	// Find added files
-	for path, info2 := range files2 {
-		if _, exists := files1[path]; !exists {
+	for path, targetInfo := range targetFiles {
+		if _, exists := sourceFiles[path]; !exists {
 			// File was added
 			result.Added = append(result.Added, DiffEntry{
 				Path:    path,
 				Status:  FileStatusAdded,
-				NewSize: info2.Size,
-				NewMode: info2.Mode,
-				Type:    info2.Type,
+				NewSize: targetInfo.Size,
+				NewMode: targetInfo.Mode,
+				Type:    targetInfo.Type,
 			})
 			result.TotalAdded++
 		}

@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/ipaqsa/artship/internal/logs"
 	"github.com/ipaqsa/artship/internal/tools"
 )
 
@@ -70,6 +71,6 @@ func (c *Client) ExtractTar(ctx context.Context, imageRef string, output string)
 		return fmt.Errorf("copy tar stream: %w", err)
 	}
 
-	c.logger.Info(tools.BoldGreen("✓")+" Successfully extracted tar archive: %s %s", tools.Blue(output), tools.Gray("("+tools.FormatSize(copied)+")"))
+	c.logger.Info(logs.BoldGreen("✓")+" Successfully extracted tar archive: %s %s", logs.Blue(output), logs.Gray("("+tools.FormatSize(copied)+")"))
 	return nil
 }

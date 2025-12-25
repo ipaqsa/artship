@@ -56,17 +56,17 @@ artifact properties before extracting them.`,
 
 		// Print artifact info with colors
 		logger.Info("")
-		logger.Info(tools.BoldBlue("Artifact Information"))
-		logger.Info(tools.Gray("─────────────────────────────────────────────────────────────"))
-		logger.Info("Path: %s", tools.Blue(info.Path))
-		logger.Info("Type: %s", tools.Yellow(info.Type))
+		logger.Info(logs.BoldBlue("Artifact Information"))
+		logger.Info(logs.Gray("─────────────────────────────────────────────────────────────"))
+		logger.Info("Path: %s", logs.Blue(info.Path))
+		logger.Info("Type: %s", logs.Yellow(info.Type))
 
 		sizeStr := tools.FormatSize(info.Size)
 		if info.Type == "dir" || info.Type == "symlink" || info.Type == "hardlink" {
 			sizeStr = "-"
 		}
-		logger.Info("Size: %s", tools.Green(sizeStr))
-		logger.Info("Mode: %s", tools.Gray(info.Mode))
+		logger.Info("Size: %s", logs.Green(sizeStr))
+		logger.Info("Mode: %s", logs.Gray(info.Mode))
 
 		return nil
 	},

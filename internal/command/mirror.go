@@ -11,10 +11,12 @@ import (
 )
 
 var (
-	srcUsername string
-	srcPassword string
-	srcToken    string
-	srcAuth     string
+	srcUsername  string
+	srcPassword  string
+	srcToken     string
+	srcAuth      string
+	srcInsecure  bool
+	destInsecure bool
 )
 
 func init() {
@@ -23,14 +25,15 @@ func init() {
 	mirrorCmd.Flags().StringVarP(&password, "password", "p", "", "Password for destination registry authentication")
 	mirrorCmd.Flags().StringVarP(&token, "token", "t", "", "Token for destination registry authentication")
 	mirrorCmd.Flags().StringVarP(&auth, "auth", "", "", "Auth string for destination registry authentication")
+	mirrorCmd.Flags().BoolVar(&destInsecure, "dest-insecure", false, "Allow insecure connections to destination registry")
 
 	// Source registry auth (only needed if different from destination or if pulling from private registry)
 	mirrorCmd.Flags().StringVar(&srcUsername, "src-username", "", "Username for source registry (if different from destination)")
 	mirrorCmd.Flags().StringVar(&srcPassword, "src-password", "", "Password for source registry (if different from destination)")
 	mirrorCmd.Flags().StringVar(&srcToken, "src-token", "", "Token for source registry (if different from destination)")
 	mirrorCmd.Flags().StringVar(&srcAuth, "src-auth", "", "Auth string for source registry (if different from destination)")
+	mirrorCmd.Flags().BoolVar(&srcInsecure, "src-insecure", false, "Allow insecure connections to source registry")
 
-	mirrorCmd.Flags().BoolVarP(&insecure, "insecure", "k", false, "Allow insecure registry connections")
 	mirrorCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Verbose debug output")
 
 	rootCmd.AddCommand(mirrorCmd)
@@ -70,12 +73,16 @@ Examples of valid image references:
     --src-username _json_key --src-password "$(cat key.json)" \
     -u admin -p secret
 
-  # Copy with verbose output
-  artship mirror alpine:3.18 myregistry.com/alpine:3.18 -u user -p pass -v
+  # Copy from insecure source to secure destination
+  artship mirror insecure.io/app:latest registry.company.com/app:latest \
+    --src-insecure -u admin -p secret
 
-  # Copy from private source to public destination
-  artship mirror private.io/app:latest docker.io/myuser/app:latest \
-    --src-username user --src-password pass`,
+  # Copy to insecure destination registry
+  artship mirror docker.io/nginx:latest myregistry.local:5000/nginx:latest \
+    --dest-insecure
+
+  # Copy with verbose output
+  artship mirror alpine:3.18 myregistry.com/alpine:3.18 -u user -p pass -v`,
 	Args: cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		logger := logs.New(verbose)
@@ -85,7 +92,7 @@ Examples of valid image references:
 			Password: password,
 			Token:    token,
 			Auth:     auth,
-			Insecure: insecure,
+			Insecure: destInsecure, // Use destination insecure as default for client
 			Logger:   logger,
 		})
 
@@ -95,11 +102,12 @@ Examples of valid image references:
 			SourcePassword: srcPassword,
 			SourceToken:    srcToken,
 			SourceAuth:     srcAuth,
+			SourceInsecure: srcInsecure,
 			DestUsername:   username,
 			DestPassword:   password,
 			DestToken:      token,
 			DestAuth:       auth,
-			Insecure:       insecure,
+			DestInsecure:   destInsecure,
 		}
 
 		// Perform mirror operation
@@ -110,13 +118,13 @@ Examples of valid image references:
 
 		// Print success message
 		logger.Info("")
-		logger.Info(tools.BoldGreen("✓ Image successfully mirrored!"))
-		logger.Info(tools.Gray("─────────────────────────────────────────────────────────────"))
-		logger.Info("Source:      %s", tools.Blue(result.SourceImage))
-		logger.Info("Destination: %s", tools.Green(result.DestImage))
-		logger.Info("Digest:      %s", tools.Gray(result.Digest))
+		logger.Info(logs.BoldGreen("✓ Image successfully mirrored!"))
+		logger.Info(logs.Gray("─────────────────────────────────────────────────────────────"))
+		logger.Info("Source:      %s", logs.Blue(result.SourceImage))
+		logger.Info("Destination: %s", logs.Green(result.DestImage))
+		logger.Info("Digest:      %s", logs.Gray(result.Digest))
 		if result.Size > 0 {
-			logger.Info("Size:        %s", tools.Gray(tools.FormatSize(result.Size)))
+			logger.Info("Size:        %s", logs.Gray(tools.FormatSize(result.Size)))
 		}
 
 		return nil

@@ -3,9 +3,6 @@ package client
 import (
 	"context"
 	"fmt"
-
-	"github.com/google/go-containerregistry/pkg/name"
-	"github.com/google/go-containerregistry/pkg/v1/remote"
 )
 
 // MirrorOptions contains options for mirroring an image
@@ -14,11 +11,12 @@ type MirrorOptions struct {
 	SourcePassword string
 	SourceToken    string
 	SourceAuth     string
+	SourceInsecure bool // Allow insecure connections to source registry
 	DestUsername   string
 	DestPassword   string
 	DestToken      string
 	DestAuth       string
-	Insecure       bool
+	DestInsecure   bool // Allow insecure connections to destination registry
 }
 
 // MirrorResult contains information about the mirroring operation
@@ -41,31 +39,11 @@ func (c *Client) Mirror(ctx context.Context, sourceRef, destRef string, opts *Mi
 
 	c.logger.Info("Fetching source image: %s", sourceRef)
 
-	// Parse source reference
-	srcRef, err := name.ParseReference(sourceRef, c.nameOptions...)
+	// Fetch the image from source using existing method
+	// If source has different credentials, we need to temporarily override client options
+	img, err := c.fetchImageWithOptions(ctx, sourceRef, opts, true)
 	if err != nil {
-		return nil, fmt.Errorf("parse source reference '%s': %w", sourceRef, err)
-	}
-
-	// Parse destination reference
-	dstRef, err := name.ParseReference(destRef, c.nameOptions...)
-	if err != nil {
-		return nil, fmt.Errorf("parse destination reference '%s': %w", destRef, err)
-	}
-
-	// Setup remote options for source (may have different credentials)
-	var srcRemoteOpts []remote.Option
-	if opts != nil && (opts.SourceUsername != "" || opts.SourceToken != "" || opts.SourceAuth != "") {
-		srcRemoteOpts = setupRemoteOptions(opts.SourceUsername, opts.SourcePassword, opts.SourceAuth, opts.SourceToken)
-	} else {
-		srcRemoteOpts = c.remoteOptions
-	}
-
-	// Fetch the image from source
-	c.logger.Debug("Downloading image from source registry...")
-	img, err := remote.Image(srcRef, srcRemoteOpts...)
-	if err != nil {
-		return nil, fmt.Errorf("fetch source image '%s': %w", sourceRef, err)
+		return nil, fmt.Errorf("fetch source image: %w", err)
 	}
 
 	// Get image digest and size for reporting
@@ -82,18 +60,9 @@ func (c *Client) Mirror(ctx context.Context, sourceRef, destRef string, opts *Mi
 
 	c.logger.Info("Pushing image to destination: %s", destRef)
 
-	// Setup remote options for destination (may have different credentials)
-	var dstRemoteOpts []remote.Option
-	if opts != nil && (opts.DestUsername != "" || opts.DestToken != "" || opts.DestAuth != "") {
-		dstRemoteOpts = setupRemoteOptions(opts.DestUsername, opts.DestPassword, opts.DestAuth, opts.DestToken)
-	} else {
-		dstRemoteOpts = c.remoteOptions
-	}
-
-	// Write the image to destination
-	c.logger.Debug("Uploading image to destination registry...")
-	if err := remote.Write(dstRef, img, dstRemoteOpts...); err != nil {
-		return nil, fmt.Errorf("write image to destination '%s': %w", destRef, err)
+	// Write image to destination
+	if err := c.writeImageWithOptions(ctx, destRef, img, opts); err != nil {
+		return nil, fmt.Errorf("write image to destination: %w", err)
 	}
 
 	c.logger.Info("Successfully mirrored image")
