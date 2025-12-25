@@ -39,12 +39,12 @@ Binaries are available for:
 
 ```bash
 # Example for Linux amd64
-wget https://github.com/ipaqsa/artship/releases/latest/download/artship-linux-amd64
+curl -L -o artship-linux-amd64 https://github.com/ipaqsa/artship/releases/latest/download/artship-linux-amd64
 chmod +x artship-linux-amd64
 sudo mv artship-linux-amd64 /usr/local/bin/artship
 
 # Example for macOS arm64
-wget https://github.com/ipaqsa/artship/releases/latest/download/artship-darwin-arm64
+curl -L -o artship-darwin-arm64 https://github.com/ipaqsa/artship/releases/latest/download/artship-darwin-arm64
 chmod +x artship-darwin-arm64
 sudo mv artship-darwin-arm64 /usr/local/bin/artship
 ```

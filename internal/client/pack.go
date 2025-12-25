@@ -22,12 +22,12 @@ import (
 	"github.com/google/go-containerregistry/pkg/v1/types"
 )
 
-// Package creates an OCI image from local files or directories using modern streaming APIs
-func (c *Client) Package(ctx context.Context, imageRef, sourcePath string) error {
+// Pack creates an OCI image from local files or directories using modern streaming APIs
+func (c *Client) Pack(ctx context.Context, imageRef, sourcePath string) error {
 	startTime := time.Now()
 
 	// Validate inputs
-	if err := c.validatePackageInputs(imageRef, sourcePath); err != nil {
+	if err := c.validatePackInputs(imageRef, sourcePath); err != nil {
 		return err
 	}
 
@@ -62,8 +62,8 @@ func (c *Client) Package(ctx context.Context, imageRef, sourcePath string) error
 	return nil
 }
 
-// validatePackageInputs validates the input parameters
-func (c *Client) validatePackageInputs(imageRef, sourcePath string) error {
+// validatePackInputs validates the input parameters
+func (c *Client) validatePackInputs(imageRef, sourcePath string) error {
 	if imageRef == "" {
 		return errors.New("no image reference provided")
 	}
@@ -83,7 +83,7 @@ func (c *Client) validatePackageInputs(imageRef, sourcePath string) error {
 
 	// Additional validation for special cases
 	if info.Mode()&os.ModeSocket != 0 {
-		return fmt.Errorf("source path '%s' is a socket, which cannot be packaged", sourcePath)
+		return fmt.Errorf("source path '%s' is a socket, which cannot be packed", sourcePath)
 	}
 
 	return nil
@@ -276,7 +276,7 @@ func (c *Client) createImageLabels(sourcePath string) map[string]string {
 	labels := map[string]string{
 		"org.opencontainers.image.created":     now.Format(time.RFC3339),
 		"org.opencontainers.image.source":      "artship",
-		"org.opencontainers.image.title":       "Packaged by artship",
+		"org.opencontainers.image.title":       "Packed by artship",
 		"org.opencontainers.image.description": fmt.Sprintf("OCI image created from %s", sourcePath),
 		"org.opencontainers.image.vendor":      "artship",
 		"org.opencontainers.image.version":     "latest",

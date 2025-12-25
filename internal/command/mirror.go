@@ -11,12 +11,11 @@ import (
 )
 
 var (
-	srcUsername  string
-	srcPassword  string
-	srcToken     string
-	srcAuth      string
-	srcInsecure  bool
-	destInsecure bool
+	srcUsername string
+	srcPassword string
+	srcToken    string
+	srcAuth     string
+	srcInsecure bool
 )
 
 func init() {
@@ -25,7 +24,7 @@ func init() {
 	mirrorCmd.Flags().StringVarP(&password, "password", "p", "", "Password for destination registry authentication")
 	mirrorCmd.Flags().StringVarP(&token, "token", "t", "", "Token for destination registry authentication")
 	mirrorCmd.Flags().StringVarP(&auth, "auth", "", "", "Auth string for destination registry authentication")
-	mirrorCmd.Flags().BoolVar(&destInsecure, "dest-insecure", false, "Allow insecure connections to destination registry")
+	mirrorCmd.Flags().BoolVar(&insecure, "insecure", false, "Allow insecure connections to destination registry")
 
 	// Source registry auth (only needed if different from destination or if pulling from private registry)
 	mirrorCmd.Flags().StringVar(&srcUsername, "src-username", "", "Username for source registry (if different from destination)")
@@ -70,7 +69,7 @@ Examples of valid image references:
 
   # Copy from private to private with different credentials
   artship mirror gcr.io/private/app:v1 registry.company.com/app:v1 \
-    --src-username _json_key --src-password "$(cat key.json)" \
+    --src-username user --src-password "$(cat key.json)" \
     -u admin -p secret
 
   # Copy from insecure source to secure destination
@@ -92,7 +91,7 @@ Examples of valid image references:
 			Password: password,
 			Token:    token,
 			Auth:     auth,
-			Insecure: destInsecure, // Use destination insecure as default for client
+			Insecure: insecure, // Use destination insecure as default for client
 			Logger:   logger,
 		})
 
@@ -103,11 +102,12 @@ Examples of valid image references:
 			SourceToken:    srcToken,
 			SourceAuth:     srcAuth,
 			SourceInsecure: srcInsecure,
-			DestUsername:   username,
-			DestPassword:   password,
-			DestToken:      token,
-			DestAuth:       auth,
-			DestInsecure:   destInsecure,
+
+			DestUsername: username,
+			DestPassword: password,
+			DestToken:    token,
+			DestAuth:     auth,
+			DestInsecure: insecure,
 		}
 
 		// Perform mirror operation

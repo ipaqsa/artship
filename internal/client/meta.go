@@ -16,6 +16,7 @@ type ImageMeta struct {
 	MediaType    string            `json:"mediaType" yaml:"MediaType"`
 	Architecture string            `json:"architecture" yaml:"Architecture"`
 	OS           string            `json:"os" yaml:"OS"`
+	ManifestSize string            `json:"manifestSize" yaml:"ManifestSize"`
 	Size         string            `json:"size" yaml:"Size"`
 	Created      string            `json:"created,omitempty" yaml:"Created,omitempty"`
 	Env          []string          `json:"env,omitempty" yaml:"Env,omitempty"`
@@ -67,16 +68,17 @@ func (c *Client) GetImageMeta(ctx context.Context, imageRef string) (*ImageMeta,
 		return nil, fmt.Errorf("get image config: %w", err)
 	}
 
-	size, err := img.Size()
-	if err != nil {
-		return nil, fmt.Errorf("get image size: %w", err)
-	}
-
 	layers, err := img.Layers()
 	if err != nil {
 		return nil, fmt.Errorf("get image layers: %w", err)
 	}
 
+	manifestSize, err := img.Size()
+	if err != nil {
+		return nil, fmt.Errorf("get image manifest size: %w", err)
+	}
+
+	var size int64
 	var layerMetas []LayerMeta
 	for i, layer := range layers {
 		layerDigest, err := layer.Digest()
@@ -88,6 +90,9 @@ func (c *Client) GetImageMeta(ctx context.Context, imageRef string) (*ImageMeta,
 		if err != nil {
 			return nil, fmt.Errorf("get layer size: %w", err)
 		}
+
+		// Add to total size
+		size += layerSize
 
 		layerMediaType, err := layer.MediaType()
 		if err != nil {
@@ -115,6 +120,7 @@ func (c *Client) GetImageMeta(ctx context.Context, imageRef string) (*ImageMeta,
 		Architecture: config.Architecture,
 		OS:           config.OS,
 		Size:         tools.FormatSize(size),
+		ManifestSize: tools.FormatSize(manifestSize),
 		Layers:       layerMetas,
 	}
 
