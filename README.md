@@ -9,11 +9,13 @@ Suitable for CI/CD pipelines, artifact distribution, and container image analysi
 
 #### 🚀 **Container Image Management**
 - Extract files, binaries, and directories from any OCI/Docker image
+- **Mirror images** between registries without Docker daemon
 - Support for public and private container registries
 - Compatible with any registry
 - No container runtime required - direct image layer access
 
 #### 🔍 **Advanced Image Analysis**
+- **Compare images** - see what changed between versions (diff command)
 - **List artifacts** with filtering by type (files, dirs, symlinks)
 - **Detailed information** display (size, permissions, type)
 - **Content preview** of files directly from images
@@ -85,6 +87,12 @@ artship cp nginx:latest --artifact nginx --output ./nginx
 
 # View file content without extraction
 artship cat nginx:latest /etc/nginx/nginx.conf
+
+# Compare two image versions
+artship diff nginx:1.24 nginx:1.25
+
+# Mirror image between registries
+artship mirror nginx:latest myregistry.com/nginx:latest -u admin -p secret
 ```
 
 ### Common Commands
@@ -611,6 +619,81 @@ List available tags for an OCI/Docker repository.
 - `artship tags gcr.io/my-project/my-app`
 - `artship tags private-registry.com/app -u user -p pass`
 
+#### `artship diff`
+
+Compare filesystems between two OCI/Docker images and show differences.
+
+**Arguments:**
+- `<image1>` - First OCI/Docker image reference (required)
+- `<image2>` - Second OCI/Docker image reference (required)
+
+**Flags:**
+- `-o, --output` - Output format: json (optional, default: colored text)
+- `--show-unchanged` - Show unchanged files in output (optional)
+- `-f, --filter` - Filter results: added, removed, modified, all (optional)
+- `-u, --username` - Username for registry authentication (optional)
+- `-p, --password` - Password for registry authentication (optional)
+- `-t, --token` - Token for registry authentication (optional)
+- `--auth` - Auth string for registry authentication (optional)
+- `-k, --insecure` - Allow insecure registry connections (optional)
+- `-v, --verbose` - Verbose debug output (optional)
+- `-h, --help` - Show help
+
+**Examples:**
+```bash
+# Compare two image versions
+artship diff nginx:1.24 nginx:1.25
+
+# JSON output for automation
+artship diff nginx:latest nginx:alpine -o json
+
+# Show only added files
+artship diff node:18 node:20 --filter added
+
+# Compare private registry images
+artship diff registry.io/app:v1 registry.io/app:v2 -u user -p pass
+```
+
+#### `artship mirror`
+
+Copy/mirror an OCI/Docker image from source to destination registry.
+
+**Arguments:**
+- `<source-image>` - Source OCI/Docker image reference (required)
+- `<destination-image>` - Destination OCI/Docker image reference (required)
+
+**Flags:**
+- `-u, --username` - Username for destination registry authentication (optional)
+- `-p, --password` - Password for destination registry authentication (optional)
+- `-t, --token` - Token for destination registry authentication (optional)
+- `--auth` - Auth string for destination registry authentication (optional)
+- `--src-username` - Username for source registry (if different from destination) (optional)
+- `--src-password` - Password for source registry (if different from destination) (optional)
+- `--src-token` - Token for source registry (if different from destination) (optional)
+- `--src-auth` - Auth string for source registry (if different from destination) (optional)
+- `--src-insecure` - Allow insecure connections to source registry (optional)
+- `--dest-insecure` - Allow insecure connections to destination registry (optional)
+- `-v, --verbose` - Verbose debug output (optional)
+- `-h, --help` - Show help
+
+**Examples:**
+```bash
+# Copy from Docker Hub to private registry
+artship mirror nginx:latest myregistry.com/nginx:latest -u admin -p secret
+
+# Different credentials for source and destination
+artship mirror gcr.io/private/app:v1 registry.company.com/app:v1 \
+  --src-username _json_key --src-password "$(cat key.json)" \
+  -u admin -p secret
+
+# Work with insecure registries
+artship mirror insecure.io/app:latest registry.company.com/app:latest \
+  --src-insecure -u admin -p secret
+
+# Rename/retag images
+artship mirror myregistry.com/app:v1.0 myregistry.com/app:latest -u admin -p secret
+```
+
 #### `artship version`
 
 Print version information.
@@ -659,6 +742,8 @@ make push
 │   │   ├── info.go       # Info subcommand (detailed artifact info)
 │   │   ├── meta.go       # Meta subcommand (image metadata)
 │   │   ├── tags.go       # Tags subcommand (list repository tags)
+│   │   ├── diff.go       # Diff subcommand (compare images)
+│   │   ├── mirror.go     # Mirror subcommand (copy between registries)
 │   │   └── version.go    # Version subcommand
 │   ├── client/            # Core business logic
 │   │   ├── client.go     # Main client with authentication
@@ -669,14 +754,17 @@ make push
 │   │   ├── has.go        # Artifact existence checking
 │   │   ├── info.go       # Detailed artifact information
 │   │   ├── meta.go       # Image metadata retrieval
-│   │   └── tags.go       # Repository tag listing
+│   │   ├── tags.go       # Repository tag listing
+│   │   ├── diff.go       # Image comparison functionality
+│   │   └── mirror.go     # Image mirroring functionality
 │   ├── tools/             # Utility functions
 │   │   ├── copy.go       # File operations with progress
 │   │   ├── walk.go       # Tar archive traversal
 │   │   ├── name.go       # Artifact matching logic
 │   │   └── format.go     # Data formatting utilities
 │   ├── logs/              # Logging functionality
-│   │   └── logger.go     # Logger implementation
+│   │   ├── logger.go     # Logger implementation
+│   │   └── colors.go     # Color output support
 │   └── version/           # Version information
 │       └── version.go    # Version handling and formatting
 ```
