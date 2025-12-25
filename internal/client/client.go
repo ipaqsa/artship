@@ -137,11 +137,20 @@ func (c *Client) image(_ context.Context, imageRef string) (crv1.Image, error) {
 	return img, nil
 }
 
+// ImageAuthOptions contains authentication and connection options for registry operations
+type ImageAuthOptions struct {
+	Username string
+	Password string
+	Token    string
+	Auth     string
+	Insecure bool
+}
+
 // fetchImageWithOptions fetches an image with custom authentication options
-func (c *Client) fetchImageWithOptions(ctx context.Context, imageRef string, opts *MirrorOptions, isSource bool) (crv1.Image, error) {
+func (c *Client) fetchImageWithOptions(ctx context.Context, imageRef string, opts *ImageAuthOptions) (crv1.Image, error) {
 	// Build name options (for insecure registry support)
 	var nameOpts []name.Option
-	if opts != nil && isSource && opts.SourceInsecure {
+	if opts != nil && opts.Insecure {
 		nameOpts = append(nameOpts, name.Insecure)
 	} else {
 		nameOpts = c.nameOptions
@@ -154,9 +163,9 @@ func (c *Client) fetchImageWithOptions(ctx context.Context, imageRef string, opt
 
 	// Determine which credentials to use
 	var remoteOpts []remote.Option
-	if opts != nil && isSource && (opts.SourceUsername != "" || opts.SourceToken != "" || opts.SourceAuth != "") {
-		// Use source-specific credentials
-		remoteOpts = setupRemoteOptions(opts.SourceUsername, opts.SourcePassword, opts.SourceAuth, opts.SourceToken)
+	if opts != nil && (opts.Username != "" || opts.Token != "" || opts.Auth != "") {
+		// Use custom credentials
+		remoteOpts = setupRemoteOptions(opts.Username, opts.Password, opts.Auth, opts.Token)
 	} else {
 		// Use default client credentials
 		remoteOpts = c.remoteOptions
@@ -172,10 +181,10 @@ func (c *Client) fetchImageWithOptions(ctx context.Context, imageRef string, opt
 }
 
 // writeImageWithOptions writes an image to a registry with custom authentication options
-func (c *Client) writeImageWithOptions(ctx context.Context, imageRef string, img crv1.Image, opts *MirrorOptions) error {
+func (c *Client) writeImageWithOptions(ctx context.Context, imageRef string, img crv1.Image, opts *ImageAuthOptions) error {
 	// Build name options (for insecure registry support)
 	var nameOpts []name.Option
-	if opts != nil && opts.DestInsecure {
+	if opts != nil && opts.Insecure {
 		nameOpts = append(nameOpts, name.Insecure)
 	} else {
 		nameOpts = c.nameOptions
@@ -186,11 +195,11 @@ func (c *Client) writeImageWithOptions(ctx context.Context, imageRef string, img
 		return fmt.Errorf("parse image reference '%s': %w", imageRef, err)
 	}
 
-	// Determine which credentials to use for destination
+	// Determine which credentials to use
 	var remoteOpts []remote.Option
-	if opts != nil && (opts.DestUsername != "" || opts.DestToken != "" || opts.DestAuth != "") {
-		// Use destination-specific credentials
-		remoteOpts = setupRemoteOptions(opts.DestUsername, opts.DestPassword, opts.DestAuth, opts.DestToken)
+	if opts != nil && (opts.Username != "" || opts.Token != "" || opts.Auth != "") {
+		// Use custom credentials
+		remoteOpts = setupRemoteOptions(opts.Username, opts.Password, opts.Auth, opts.Token)
 	} else {
 		// Use default client credentials
 		remoteOpts = c.remoteOptions

@@ -39,9 +39,17 @@ func (c *Client) Mirror(ctx context.Context, sourceRef, destRef string, opts *Mi
 
 	c.logger.Info("Fetching source image: %s", sourceRef)
 
-	// Fetch the image from source using existing method
-	// If source has different credentials, we need to temporarily override client options
-	img, err := c.fetchImageWithOptions(ctx, sourceRef, opts, true)
+	// Convert source credentials to ImageAuthOptions
+	sourceAuthOpts := &ImageAuthOptions{
+		Username: opts.SourceUsername,
+		Password: opts.SourcePassword,
+		Token:    opts.SourceToken,
+		Auth:     opts.SourceAuth,
+		Insecure: opts.SourceInsecure,
+	}
+
+	// Fetch the image from source
+	img, err := c.fetchImageWithOptions(ctx, sourceRef, sourceAuthOpts)
 	if err != nil {
 		return nil, fmt.Errorf("fetch source image: %w", err)
 	}
@@ -60,8 +68,17 @@ func (c *Client) Mirror(ctx context.Context, sourceRef, destRef string, opts *Mi
 
 	c.logger.Info("Pushing image to destination: %s", destRef)
 
+	// Convert destination credentials to ImageAuthOptions
+	destAuthOpts := &ImageAuthOptions{
+		Username: opts.DestUsername,
+		Password: opts.DestPassword,
+		Token:    opts.DestToken,
+		Auth:     opts.DestAuth,
+		Insecure: opts.DestInsecure,
+	}
+
 	// Write image to destination
-	if err := c.writeImageWithOptions(ctx, destRef, img, opts); err != nil {
+	if err := c.writeImageWithOptions(ctx, destRef, img, destAuthOpts); err != nil {
 		return nil, fmt.Errorf("write image to destination: %w", err)
 	}
 
