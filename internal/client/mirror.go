@@ -76,7 +76,7 @@ func (c *Client) Mirror(ctx context.Context, sourceRef, destRef string, opts *Mi
 
 	size, err := img.Size()
 	if err != nil {
-		c.logger.Debug("Warning: could not determine image size")
+		c.logger.Warn("Could not determine image size: %v", err)
 		size = 0
 	}
 

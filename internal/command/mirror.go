@@ -15,22 +15,20 @@ var (
 	srcPassword string
 	srcToken    string
 	srcAuth     string
-	dstUsername string
-	dstPassword string
-	dstToken    string
-	dstAuth     string
 )
 
 func init() {
-	mirrorCmd.Flags().StringVar(&srcUsername, "src-username", "", "Username for source registry authentication")
-	mirrorCmd.Flags().StringVar(&srcPassword, "src-password", "", "Password for source registry authentication")
-	mirrorCmd.Flags().StringVar(&srcToken, "src-token", "", "Token for source registry authentication")
-	mirrorCmd.Flags().StringVar(&srcAuth, "src-auth", "", "Auth string for source registry authentication")
+	// Standard auth flags apply to destination registry (most common use case)
+	mirrorCmd.Flags().StringVarP(&username, "username", "u", "", "Username for destination registry authentication")
+	mirrorCmd.Flags().StringVarP(&password, "password", "p", "", "Password for destination registry authentication")
+	mirrorCmd.Flags().StringVarP(&token, "token", "t", "", "Token for destination registry authentication")
+	mirrorCmd.Flags().StringVarP(&auth, "auth", "", "", "Auth string for destination registry authentication")
 
-	mirrorCmd.Flags().StringVar(&dstUsername, "dst-username", "", "Username for destination registry authentication")
-	mirrorCmd.Flags().StringVar(&dstPassword, "dst-password", "", "Password for destination registry authentication")
-	mirrorCmd.Flags().StringVar(&dstToken, "dst-token", "", "Token for destination registry authentication")
-	mirrorCmd.Flags().StringVar(&dstAuth, "dst-auth", "", "Auth string for destination registry authentication")
+	// Source registry auth (only needed if different from destination or if pulling from private registry)
+	mirrorCmd.Flags().StringVar(&srcUsername, "src-username", "", "Username for source registry (if different from destination)")
+	mirrorCmd.Flags().StringVar(&srcPassword, "src-password", "", "Password for source registry (if different from destination)")
+	mirrorCmd.Flags().StringVar(&srcToken, "src-token", "", "Token for source registry (if different from destination)")
+	mirrorCmd.Flags().StringVar(&srcAuth, "src-auth", "", "Auth string for source registry (if different from destination)")
 
 	mirrorCmd.Flags().BoolVarP(&insecure, "insecure", "k", false, "Allow insecure registry connections")
 	mirrorCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Verbose debug output")
@@ -58,30 +56,26 @@ Examples of valid image references:
 - docker.io/library/nginx:1.25
 - gcr.io/my-project/my-app:v1.0.0
 - myregistry.com:5000/app:latest`,
-	Example: `  # Copy from Docker Hub to a private registry
-  artship mirror nginx:latest myregistry.com/nginx:latest
+	Example: `  # Copy from Docker Hub to a private registry (public source, authenticated destination)
+  artship mirror nginx:latest myregistry.com/nginx:latest -u admin -p secret
 
-  # Copy between different registries with authentication
-  artship mirror docker.io/nginx:latest \
-    myregistry.com/nginx:latest \
-    --dst-username admin --dst-password secret
+  # Copy between registries (auth applies to destination by default)
+  artship mirror docker.io/nginx:latest myregistry.com/nginx:latest -u admin -p secret
 
   # Rename an image tag in the same registry
-  artship mirror myregistry.com/app:v1.0 myregistry.com/app:latest
+  artship mirror myregistry.com/app:v1.0 myregistry.com/app:latest -u admin -p secret
 
-  # Copy from public to private with different credentials
-  artship mirror gcr.io/public/app:v1 \
-    registry.company.com/app:v1 \
+  # Copy from private to private with different credentials
+  artship mirror gcr.io/private/app:v1 registry.company.com/app:v1 \
     --src-username _json_key --src-password "$(cat key.json)" \
-    --dst-username admin --dst-password secret
+    -u admin -p secret
 
   # Copy with verbose output
-  artship mirror alpine:3.18 myregistry.com/alpine:3.18 -v
+  artship mirror alpine:3.18 myregistry.com/alpine:3.18 -u user -p pass -v
 
-  # Use Docker credentials for source, explicit for destination
-  artship mirror nginx:latest \
-    myregistry.com/nginx:latest \
-    --dst-username user --dst-password pass`,
+  # Copy from private source to public destination
+  artship mirror private.io/app:latest docker.io/myuser/app:latest \
+    --src-username user --src-password pass`,
 	Args: cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		logger := logs.New(verbose)
@@ -101,10 +95,10 @@ Examples of valid image references:
 			SourcePassword: srcPassword,
 			SourceToken:    srcToken,
 			SourceAuth:     srcAuth,
-			DestUsername:   dstUsername,
-			DestPassword:   dstPassword,
-			DestToken:      dstToken,
-			DestAuth:       dstAuth,
+			DestUsername:   username,
+			DestPassword:   password,
+			DestToken:      token,
+			DestAuth:       auth,
 			Insecure:       insecure,
 		}
 

@@ -10,9 +10,8 @@ import (
 )
 
 var (
-	jsonOutput    bool
+	outputFormat  string
 	showUnchanged bool
-	noColor       bool
 	diffFilter    string
 )
 
@@ -23,9 +22,8 @@ func init() {
 	diffCmd.Flags().StringVarP(&auth, "auth", "", "", "Auth for registry authentication")
 	diffCmd.Flags().BoolVarP(&insecure, "insecure", "k", false, "Allow insecure registry connections")
 	diffCmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Verbose debug output")
-	diffCmd.Flags().BoolVar(&jsonOutput, "json", false, "Output diff results in JSON format")
+	diffCmd.Flags().StringVarP(&outputFormat, "output", "o", "", "Output format (json)")
 	diffCmd.Flags().BoolVar(&showUnchanged, "show-unchanged", false, "Show unchanged files in the output")
-	diffCmd.Flags().BoolVar(&noColor, "no-color", false, "Disable colored output")
 	diffCmd.Flags().StringVarP(&diffFilter, "filter", "f", "", "Filter diff results (added, removed, modified, all)")
 
 	rootCmd.AddCommand(diffCmd)
@@ -46,7 +44,7 @@ Results are displayed with color-coded output by default:
 - Red (-) for removed files
 - Yellow (~) for modified files
 
-Use --json flag for machine-readable JSON output.`,
+Use -o json flag for machine-readable JSON output.`,
 	Example: `  # Compare two versions of the same image
   artship diff nginx:1.24 nginx:1.25
 
@@ -54,7 +52,7 @@ Use --json flag for machine-readable JSON output.`,
   artship diff alpine:3.17 alpine:3.18 -v
 
   # Output as JSON
-  artship diff nginx:latest nginx:alpine --json
+  artship diff nginx:latest nginx:alpine -o json
 
   # Show unchanged files
   artship diff redis:7.0 redis:7.2 --show-unchanged
@@ -89,15 +87,13 @@ Use --json flag for machine-readable JSON output.`,
 		}
 
 		// Output results
-		if jsonOutput {
+		if outputFormat == "json" {
 			jsonStr, err := result.ToJSON()
 			if err != nil {
 				return fmt.Errorf("failed to generate JSON output: %w", err)
 			}
 			fmt.Println(jsonStr)
 		} else {
-			// TODO: Handle --no-color flag if needed
-			// For now, colors are always enabled in non-JSON mode
 			fmt.Print(result.String(showUnchanged))
 		}
 
@@ -108,8 +104,8 @@ Use --json flag for machine-readable JSON output.`,
 // filterDiffResult filters the diff result based on the specified filter
 func filterDiffResult(result *client.DiffResult, filter string) *client.DiffResult {
 	filtered := &client.DiffResult{
-		Image1: result.Image1,
-		Image2: result.Image2,
+		SourceImage: result.SourceImage,
+		TargetImage: result.TargetImage,
 	}
 
 	switch filter {

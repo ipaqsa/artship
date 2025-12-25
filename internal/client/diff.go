@@ -2,13 +2,20 @@ package client
 
 import (
 	"context"
-	"crypto/sha256"
 	"encoding/json"
 	"fmt"
-	"io"
 	"sort"
+	"strings"
 
 	"github.com/ipaqsa/artship/internal/tools"
+)
+
+const (
+	// File status constants
+	FileStatusAdded     = "added"
+	FileStatusRemoved   = "removed"
+	FileStatusModified  = "modified"
+	FileStatusUnchanged = "unchanged"
 )
 
 // FileInfo represents information about a file in an image
@@ -33,8 +40,8 @@ type DiffEntry struct {
 
 // DiffResult contains the comparison results
 type DiffResult struct {
-	Image1       string      `json:"image1"`
-	Image2       string      `json:"image2"`
+	SourceImage  string      `json:"source_image"`
+	TargetImage  string      `json:"target_image"`
 	Added        []DiffEntry `json:"added"`
 	Removed      []DiffEntry `json:"removed"`
 	Modified     []DiffEntry `json:"modified"`
@@ -46,38 +53,47 @@ type DiffResult struct {
 
 // String returns formatted diff output with colors
 func (r *DiffResult) String(showUnchanged bool) string {
-	result := fmt.Sprintf("\n%s\n", tools.BoldBlue(fmt.Sprintf("Comparing %s → %s", r.Image1, r.Image2)))
-	result += fmt.Sprintf("%s\n\n", tools.Gray("─────────────────────────────────────────────────────────────"))
+	var sb strings.Builder
+
+	sb.WriteString("\n")
+	sb.WriteString(tools.BoldBlue(fmt.Sprintf("Comparing %s → %s", r.SourceImage, r.TargetImage)))
+	sb.WriteString("\n")
+	sb.WriteString(tools.Gray("─────────────────────────────────────────────────────────────"))
+	sb.WriteString("\n\n")
 
 	// Summary
-	result += tools.BoldGreen(fmt.Sprintf("+ Added:    %d files\n", r.TotalAdded))
-	result += tools.BoldRed(fmt.Sprintf("- Removed:  %d files\n", r.TotalRemoved))
-	result += tools.BoldYellow(fmt.Sprintf("~ Modified: %d files\n", r.TotalChanged))
-	result += fmt.Sprintf("\n%s\n\n", tools.Gray("─────────────────────────────────────────────────────────────"))
+	sb.WriteString(tools.BoldGreen(fmt.Sprintf("+ Added:    %d files\n", r.TotalAdded)))
+	sb.WriteString(tools.BoldRed(fmt.Sprintf("- Removed:  %d files\n", r.TotalRemoved)))
+	sb.WriteString(tools.BoldYellow(fmt.Sprintf("~ Modified: %d files\n", r.TotalChanged)))
+	sb.WriteString("\n")
+	sb.WriteString(tools.Gray("─────────────────────────────────────────────────────────────"))
+	sb.WriteString("\n\n")
 
 	// Added files
 	if len(r.Added) > 0 {
-		result += tools.BoldGreen("Added files:\n")
+		sb.WriteString(tools.BoldGreen("Added files:\n"))
 		for _, entry := range r.Added {
 			details := fmt.Sprintf("(%s, %s)", entry.Type, tools.FormatSize(entry.NewSize))
-			result += tools.FormatDiffLine("added", entry.Path, details) + "\n"
+			sb.WriteString(tools.FormatDiffLine(FileStatusAdded, entry.Path, details))
+			sb.WriteString("\n")
 		}
-		result += "\n"
+		sb.WriteString("\n")
 	}
 
 	// Removed files
 	if len(r.Removed) > 0 {
-		result += tools.BoldRed("Removed files:\n")
+		sb.WriteString(tools.BoldRed("Removed files:\n"))
 		for _, entry := range r.Removed {
 			details := fmt.Sprintf("(%s, %s)", entry.Type, tools.FormatSize(entry.OldSize))
-			result += tools.FormatDiffLine("removed", entry.Path, details) + "\n"
+			sb.WriteString(tools.FormatDiffLine(FileStatusRemoved, entry.Path, details))
+			sb.WriteString("\n")
 		}
-		result += "\n"
+		sb.WriteString("\n")
 	}
 
 	// Modified files
 	if len(r.Modified) > 0 {
-		result += tools.BoldYellow("Modified files:\n")
+		sb.WriteString(tools.BoldYellow("Modified files:\n"))
 		for _, entry := range r.Modified {
 			var details string
 			if entry.OldSize != entry.NewSize {
@@ -90,21 +106,23 @@ func (r *DiffResult) String(showUnchanged bool) string {
 					details = fmt.Sprintf("(mode: %s → %s)", entry.OldMode, entry.NewMode)
 				}
 			}
-			result += tools.FormatDiffLine("modified", entry.Path, details) + "\n"
+			sb.WriteString(tools.FormatDiffLine(FileStatusModified, entry.Path, details))
+			sb.WriteString("\n")
 		}
-		result += "\n"
+		sb.WriteString("\n")
 	}
 
 	// Unchanged files (optional)
 	if showUnchanged && len(r.Unchanged) > 0 {
-		result += tools.Gray(fmt.Sprintf("Unchanged files: %d\n", len(r.Unchanged)))
+		sb.WriteString(tools.Gray(fmt.Sprintf("Unchanged files: %d\n", len(r.Unchanged))))
 		for _, entry := range r.Unchanged {
 			details := fmt.Sprintf("(%s)", tools.FormatSize(entry.NewSize))
-			result += tools.FormatDiffLine("unchanged", entry.Path, details) + "\n"
+			sb.WriteString(tools.FormatDiffLine(FileStatusUnchanged, entry.Path, details))
+			sb.WriteString("\n")
 		}
 	}
 
-	return result
+	return sb.String()
 }
 
 // ToJSON returns JSON representation of the diff result
@@ -134,14 +152,14 @@ func (c *Client) Diff(ctx context.Context, image1Ref, image2Ref string, includeU
 		return nil, fmt.Errorf("get files from %s: %w", image2Ref, err)
 	}
 
-	c.logger.Debug("Comparing %d files from image1 with %d files from image2", len(files1), len(files2))
+	c.logger.Debug("Comparing %d files from source with %d files from target", len(files1), len(files2))
 
 	result := &DiffResult{
-		Image1:   image1Ref,
-		Image2:   image2Ref,
-		Added:    []DiffEntry{},
-		Removed:  []DiffEntry{},
-		Modified: []DiffEntry{},
+		SourceImage: image1Ref,
+		TargetImage: image2Ref,
+		Added:       []DiffEntry{},
+		Removed:     []DiffEntry{},
+		Modified:    []DiffEntry{},
 	}
 
 	if includeUnchanged {
@@ -156,7 +174,7 @@ func (c *Client) Diff(ctx context.Context, image1Ref, image2Ref string, includeU
 				// File was modified
 				result.Modified = append(result.Modified, DiffEntry{
 					Path:    path,
-					Status:  "modified",
+					Status:  FileStatusModified,
 					OldSize: info1.Size,
 					NewSize: info2.Size,
 					OldMode: info1.Mode,
@@ -168,7 +186,7 @@ func (c *Client) Diff(ctx context.Context, image1Ref, image2Ref string, includeU
 				// File is unchanged
 				result.Unchanged = append(result.Unchanged, DiffEntry{
 					Path:    path,
-					Status:  "unchanged",
+					Status:  FileStatusUnchanged,
 					NewSize: info2.Size,
 					NewMode: info2.Mode,
 					Type:    info2.Type,
@@ -178,7 +196,7 @@ func (c *Client) Diff(ctx context.Context, image1Ref, image2Ref string, includeU
 			// File was removed
 			result.Removed = append(result.Removed, DiffEntry{
 				Path:    path,
-				Status:  "removed",
+				Status:  FileStatusRemoved,
 				OldSize: info1.Size,
 				OldMode: info1.Mode,
 				Type:    info1.Type,
@@ -193,7 +211,7 @@ func (c *Client) Diff(ctx context.Context, image1Ref, image2Ref string, includeU
 			// File was added
 			result.Added = append(result.Added, DiffEntry{
 				Path:    path,
-				Status:  "added",
+				Status:  FileStatusAdded,
 				NewSize: info2.Size,
 				NewMode: info2.Mode,
 				Type:    info2.Type,
@@ -236,14 +254,4 @@ func (c *Client) getFileMap(ctx context.Context, imageRef string) (map[string]*F
 	}
 
 	return fileMap, nil
-}
-
-// computeFileHash computes SHA256 hash of a file (for deep content comparison)
-// This is expensive and optional - can be added later if needed
-func computeFileHash(r io.Reader) (string, error) {
-	h := sha256.New()
-	if _, err := io.Copy(h, r); err != nil {
-		return "", err
-	}
-	return fmt.Sprintf("%x", h.Sum(nil)), nil
 }
