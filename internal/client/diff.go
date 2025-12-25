@@ -11,12 +11,15 @@ import (
 	"github.com/ipaqsa/artship/internal/tools"
 )
 
+// FileStatus represents the status of a file in diff comparison
+type FileStatus string
+
 const (
 	// File status constants
-	FileStatusAdded     = "added"
-	FileStatusRemoved   = "removed"
-	FileStatusModified  = "modified"
-	FileStatusUnchanged = "unchanged"
+	FileStatusAdded     FileStatus = "added"
+	FileStatusRemoved   FileStatus = "removed"
+	FileStatusModified  FileStatus = "modified"
+	FileStatusUnchanged FileStatus = "unchanged"
 )
 
 // FileInfo represents information about a file in an image
@@ -30,13 +33,13 @@ type FileInfo struct {
 
 // DiffEntry represents a single difference between images
 type DiffEntry struct {
-	Path    string `json:"path"`
-	Status  string `json:"status"` // added, removed, modified, unchanged
-	OldSize int64  `json:"old_size,omitempty"`
-	NewSize int64  `json:"new_size,omitempty"`
-	OldMode string `json:"old_mode,omitempty"`
-	NewMode string `json:"new_mode,omitempty"`
-	Type    string `json:"type"`
+	Path    string     `json:"path"`
+	Status  FileStatus `json:"status"`
+	OldSize int64      `json:"old_size,omitempty"`
+	NewSize int64      `json:"new_size,omitempty"`
+	OldMode string     `json:"old_mode,omitempty"`
+	NewMode string     `json:"new_mode,omitempty"`
+	Type    string     `json:"type"`
 }
 
 // DiffResult contains the comparison results
@@ -75,7 +78,7 @@ func (r *DiffResult) String(showUnchanged bool) string {
 		sb.WriteString(logs.BoldGreen("Added files:\n"))
 		for _, entry := range r.Added {
 			details := fmt.Sprintf("(%s, %s)", entry.Type, tools.FormatSize(entry.NewSize))
-			sb.WriteString(logs.FormatDiffLine(FileStatusAdded, entry.Path, details))
+			sb.WriteString(logs.FormatDiffLine(string(FileStatusAdded), entry.Path, details))
 			sb.WriteString("\n")
 		}
 		sb.WriteString("\n")
@@ -86,7 +89,7 @@ func (r *DiffResult) String(showUnchanged bool) string {
 		sb.WriteString(logs.BoldRed("Removed files:\n"))
 		for _, entry := range r.Removed {
 			details := fmt.Sprintf("(%s, %s)", entry.Type, tools.FormatSize(entry.OldSize))
-			sb.WriteString(logs.FormatDiffLine(FileStatusRemoved, entry.Path, details))
+			sb.WriteString(logs.FormatDiffLine(string(FileStatusRemoved), entry.Path, details))
 			sb.WriteString("\n")
 		}
 		sb.WriteString("\n")
@@ -107,7 +110,7 @@ func (r *DiffResult) String(showUnchanged bool) string {
 					details = fmt.Sprintf("(mode: %s → %s)", entry.OldMode, entry.NewMode)
 				}
 			}
-			sb.WriteString(logs.FormatDiffLine(FileStatusModified, entry.Path, details))
+			sb.WriteString(logs.FormatDiffLine(string(FileStatusModified), entry.Path, details))
 			sb.WriteString("\n")
 		}
 		sb.WriteString("\n")
@@ -118,7 +121,7 @@ func (r *DiffResult) String(showUnchanged bool) string {
 		sb.WriteString(logs.Gray(fmt.Sprintf("Unchanged files: %d\n", len(r.Unchanged))))
 		for _, entry := range r.Unchanged {
 			details := fmt.Sprintf("(%s)", tools.FormatSize(entry.NewSize))
-			sb.WriteString(logs.FormatDiffLine(FileStatusUnchanged, entry.Path, details))
+			sb.WriteString(logs.FormatDiffLine(string(FileStatusUnchanged), entry.Path, details))
 			sb.WriteString("\n")
 		}
 	}
