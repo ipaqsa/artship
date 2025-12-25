@@ -66,8 +66,9 @@ This command downloads the image layers and lists all available artifacts`,
 			return fmt.Errorf("failed to list artifacts: %w", err)
 		}
 
-		logger.Info("Image artifacts:")
-
+		logger.Info("")
+		logger.Info(logs.BoldBlue("Image artifacts:"))
+		logger.Info(logs.Gray("─────────────────────────────────────────────────────────────"))
 		logger.Info(artifacts.String(detailed))
 
 		return nil

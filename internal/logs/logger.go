@@ -31,3 +31,8 @@ func (l *Logger) Debug(msg string, args ...any) {
 		_, _ = fmt.Fprintf(l.output, "[DEBUG] %s\n", fmt.Sprintf(msg, args...))
 	}
 }
+
+// Warn logs warning messages (always visible)
+func (l *Logger) Warn(msg string, args ...any) {
+	_, _ = fmt.Fprintf(l.output, "[WARN] %s\n", fmt.Sprintf(msg, args...))
+}

@@ -51,9 +51,11 @@ This command queries the registry and displays all tags in alphabetical order.`,
 			return fmt.Errorf("failed to list tags: %w", err)
 		}
 
-		logger.Info("Available tags:")
+		logger.Info("")
+		logger.Info(logs.BoldBlue("Available tags for %s:"), logs.Blue(args[0]))
+		logger.Info(logs.Gray("─────────────────────────────────────────────────────────────"))
 		for _, tag := range tags {
-			logger.Info(" " + tag)
+			logger.Info("  %s %s", logs.Green("•"), logs.Yellow(tag))
 		}
 
 		return nil

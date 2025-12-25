@@ -53,11 +53,11 @@ the presence of files or directories before performing operations.`,
 				return fmt.Errorf("failed to check artifact: %w", err)
 			}
 
-			logger.Info("Artifact not found")
+			logger.Info(logs.Red("✗")+" Artifact %s not found in %s", logs.Yellow(args[1]), logs.Blue(args[0]))
 			return nil
 		}
 
-		logger.Info("Artifact found")
+		logger.Info(logs.Green("✓")+" Artifact %s found in %s", logs.Yellow(args[1]), logs.Blue(args[0]))
 
 		return nil
 	},

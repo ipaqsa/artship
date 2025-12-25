@@ -47,7 +47,10 @@ before extracting artifacts.`,
 			return fmt.Errorf("failed to get the image metadata: %w", err)
 		}
 
-		logger.Info("Image meta: \n%s", meta.String())
+		logger.Info("")
+		logger.Info(logs.BoldBlue("Image Metadata:"))
+		logger.Info(logs.Gray("─────────────────────────────────────────────────────────────"))
+		logger.Info("%s", meta.String())
 
 		return nil
 	},
